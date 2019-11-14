@@ -409,7 +409,7 @@ public class ForegroundLocationUpdatesService extends Service {
 
         CharSequence text = "Location track";
 
-        // Extra to help us figure out if we arrived in onStartCommand via the notification or not.
+//         Extra to help us figure out if we arrived in onStartCommand via the notification or not.
         intent.putExtra(EXTRA_STARTED_FROM_NOTIFICATION, true);
 
         // The PendingIntent that leads to a call to onStartCommand() in this service.
