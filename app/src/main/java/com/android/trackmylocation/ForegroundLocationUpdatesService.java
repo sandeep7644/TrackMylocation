@@ -416,7 +416,7 @@ public class ForegroundLocationUpdatesService extends Service {
         PendingIntent servicePendingIntent = PendingIntent.getService(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
-        // The PendingIntent to launch activity.
+//         The PendingIntent to launch activity.
         PendingIntent activityPendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainActivity.class), 0);
 
