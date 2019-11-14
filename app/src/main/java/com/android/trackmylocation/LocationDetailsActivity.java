@@ -60,7 +60,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class LocationDetailsActivity extends AppCompatActivity {
-//sandeep dubey is updating
+//sandeep dubey is to repo
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest mLocationRequest;
     private MapView mapView;
