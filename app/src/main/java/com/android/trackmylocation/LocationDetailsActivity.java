@@ -18,6 +18,8 @@ import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -47,6 +49,7 @@ import com.google.android.gms.maps.model.JointType;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -60,7 +63,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class LocationDetailsActivity extends AppCompatActivity {
-//change test
+    //change test
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest mLocationRequest;
     private MapView mapView;
@@ -73,12 +76,13 @@ public class LocationDetailsActivity extends AppCompatActivity {
     private LatLng prevLatLng;
     LatLng currentLatLng;
     String detail_id;
-    private PolylineOptions rectLine;
+    private PolylineOptions rectLineNormalOptions, rectlinePredictedOptions, rectlineafterFilterOptions;
+    private Polyline rectLineNormal, rectlinePredicted, rectlineafterFilter;
     Location startPoint = new Location("locationA");
     Location endPoint = new Location("locationB");
-    private BitmapDescriptor icon;
-    private Timer timer;
-//i pushed this file for testing
+    CheckBox checknormal, checkfilter, checkpredicted;
+
+    //i pushed this file for testing
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -86,14 +90,62 @@ public class LocationDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_location_details);
         requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
         detail_id = getIntent().getStringExtra("detail_id");
-        recyclerviewAdapterLocation = new RecyclerviewAdapterLocation();
-        recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setVisibility(View.GONE);
-        recyclerView.setLayoutManager(new LinearLayoutManager(LocationDetailsActivity.this));
-//        recyclerView.setAdapter(recyclerviewAdapterLocation);
+        checknormal = findViewById(R.id.checknormal);
+        checkfilter = findViewById(R.id.checkfilter);
+        checkpredicted = findViewById(R.id.checkpredicted);
+        rectLineNormalOptions = new PolylineOptions()
+                .color(getResources().getColor(R.color.activity_main_label_kal))
+                .width(7);
+        rectlinePredictedOptions = new PolylineOptions()
+                .color(getResources().getColor(R.color.colorExitItem))
+                .width(7);
+        rectlineafterFilterOptions = new PolylineOptions()
+                .color(getResources().getColor(R.color.withfilterpolylinecolor))
+                .width(7);
 
-        icon = bitmapDescriptorFromVector(LocationDetailsActivity.this, R.drawable.round_marker);
+        checknormal.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (rectLineNormal == null) {
+                    drawPolyLinesNormal();
+                } else {
+                    if (b) {
+                        rectLineNormal = mMap.addPolyline(rectLineNormalOptions);
+                    } else {
+                        rectLineNormal.remove();
+                    }
+                }
 
+            }
+        });
+        checkfilter.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (rectlineafterFilter == null) {
+                    drawPolyLinesFiltered();
+                } else {
+                    if (b) {
+                        rectlineafterFilter = mMap.addPolyline(rectlineafterFilterOptions);
+                    } else {
+                        rectlineafterFilter.remove();
+                    }
+                }
+            }
+        });
+        checkpredicted.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (rectlinePredicted == null) {
+                    drawPolyLinesPredicted();
+                } else {
+                    if (b) {
+                        rectlinePredicted = mMap.addPolyline(rectlinePredictedOptions);
+                    } else {
+                        rectlinePredicted.remove();
+                    }
+                }
+            }
+        });
         mapView = this.findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(new OnMapReadyCallback() {
@@ -139,46 +191,19 @@ public class LocationDetailsActivity extends AppCompatActivity {
                 });
             }
         });
-        AppBarLayout mAppBarLayout = (AppBarLayout) findViewById(R.id.appBar);
-        CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) mAppBarLayout.getLayoutParams();
-        AppBarLayout.Behavior behavior = new AppBarLayout.Behavior();
-        behavior.setDragCallback(new AppBarLayout.Behavior.DragCallback() {
-            @Override
-            public boolean canDrag(AppBarLayout appBarLayout) {
-                return false;
-            }
-        });
-        params.setBehavior(behavior);
 
     }
 
-    private BitmapDescriptor bitmapDescriptorFromVector(Context context, @DrawableRes int vectorDrawableResourceId) {
-        Drawable background = ContextCompat.getDrawable(context, R.drawable.round_marker);
-        background.setBounds(0, 0, background.getIntrinsicWidth(), background.getIntrinsicHeight());
-        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId);
-        vectorDrawable.setBounds(40, 20, vectorDrawable.getIntrinsicWidth() + 40, vectorDrawable.getIntrinsicHeight() + 20);
-        Bitmap bitmap = Bitmap.createBitmap(background.getIntrinsicWidth(), background.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        background.draw(canvas);
-        vectorDrawable.draw(canvas);
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
-    }
+
 
     private void updateList() {
 //        recyclerviewAdapterLocation.updateList(OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id));
-        drawOnMap();
     }
 
-    private void drawOnMap() {
-        List<LocationEntity> locationEntitieswithout_filter = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "without_filter");
-        List<LocationEntity> kalman_filter = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "predicted_filter");
-        List<LocationEntity> normallocation = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "normallocation");
-        drawPolyLines(locationEntitieswithout_filter);
-        drawPolyLines(kalman_filter);
-        drawPolyLines(normallocation);
-    }
 
-    private void drawPolyLines(List<LocationEntity> list) {
+    private void drawPolyLinesPredicted() {
+        List<LocationEntity> list = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "predicted_filter");
+
         if (list == null)
             return;
 
@@ -193,9 +218,7 @@ public class LocationDetailsActivity extends AppCompatActivity {
         }
 //        if (list.size() <= 2)
 //            return;
-        rectLine = new PolylineOptions()
-                .color(getResources().getColor(R.color.colorPrimary))
-                .width(7);
+
         final LatLng source = new LatLng(list.get(list.size() - 1).getLatitude(), list.get(list.size() - 1).getLongitude());
         final LatLng destination = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
 
@@ -207,14 +230,7 @@ public class LocationDetailsActivity extends AppCompatActivity {
 
         for (int i = 0; i < list.size(); i++) {
             LocationEntity locationEntity = list.get(i);
-            if (locationEntity.getAddress().equalsIgnoreCase("without_filter")) {
-                rectLine.color(getResources().getColor(R.color.withfilterpolylinecolor));
 
-            } else if (locationEntity.getAddress().equalsIgnoreCase("normallocation")) {
-                rectLine.color(getResources().getColor(R.color.activity_main_label_kal));
-            } else if (locationEntity.getAddress().equalsIgnoreCase("predicted_filter")) {
-                rectLine.color(getResources().getColor(R.color.colorExitItem));
-            }
             LatLng latLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
             if (prevLatLng == null) {
                 prevLatLng = latLng;
@@ -227,7 +243,7 @@ public class LocationDetailsActivity extends AppCompatActivity {
 //                if (startPoint.distanceTo(endPoint) >= 20) {
 
 //testing
-                rectLine.startCap(new RoundCap())
+                rectlinePredictedOptions.startCap(new RoundCap())
                         .endCap(new RoundCap())
                         .jointType(JointType.ROUND)
                         .add(prevLatLng)
@@ -240,7 +256,140 @@ public class LocationDetailsActivity extends AppCompatActivity {
 
         }
 
-        mMap.addPolyline(rectLine);
+        rectlinePredicted = mMap.addPolyline(rectlinePredictedOptions);
+
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.builder().include(source).include(destination).build(), 100));
+
+            }
+        });
+
+    }
+
+    private void drawPolyLinesNormal() {
+        List<LocationEntity> list = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "normallocation");
+
+        if (list == null)
+            return;
+
+        if (list.size() == 0)
+            return;
+
+        if (list.size() == 1) {
+            final LatLng stop = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
+            updateScreen(stop);
+
+            return;
+        }
+//        if (list.size() <= 2)
+//            return;
+
+        final LatLng source = new LatLng(list.get(list.size() - 1).getLatitude(), list.get(list.size() - 1).getLongitude());
+        final LatLng destination = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
+
+
+        mMap.addMarker(new MarkerOptions().position(source));
+        mMap.addMarker(new MarkerOptions().position(destination));
+        LatLng prevLatLng = null;
+        //sandeep  dubey
+
+        for (int i = 0; i < list.size(); i++) {
+            LocationEntity locationEntity = list.get(i);
+
+            LatLng latLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
+            if (prevLatLng == null) {
+                prevLatLng = latLng;
+            } else {
+                startPoint.setLatitude(prevLatLng.latitude);
+                startPoint.setLongitude(prevLatLng.longitude);
+                endPoint.setLatitude(latLng.latitude);
+                endPoint.setLongitude(latLng.longitude);
+
+//                if (startPoint.distanceTo(endPoint) >= 20) {
+
+//testing
+                rectLineNormalOptions.startCap(new RoundCap())
+                        .endCap(new RoundCap())
+                        .jointType(JointType.ROUND)
+                        .add(prevLatLng)
+                        .add(latLng);
+//                }
+
+                prevLatLng = latLng;
+            }
+
+
+        }
+
+        rectLineNormal = mMap.addPolyline(rectLineNormalOptions);
+
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.builder().include(source).include(destination).build(), 100));
+
+            }
+        });
+
+    }
+
+    private void drawPolyLinesFiltered() {
+        List<LocationEntity> list = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "without_filter");
+        if (list == null)
+            return;
+
+        if (list.size() == 0)
+            return;
+
+        if (list.size() == 1) {
+            final LatLng stop = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
+            updateScreen(stop);
+
+            return;
+        }
+//        if (list.size() <= 2)
+//            return;
+
+        final LatLng source = new LatLng(list.get(list.size() - 1).getLatitude(), list.get(list.size() - 1).getLongitude());
+        final LatLng destination = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
+
+
+        mMap.addMarker(new MarkerOptions().position(source));
+        mMap.addMarker(new MarkerOptions().position(destination));
+        LatLng prevLatLng = null;
+        //sandeep  dubey
+
+        for (int i = 0; i < list.size(); i++) {
+            LocationEntity locationEntity = list.get(i);
+
+            LatLng latLng = new LatLng(locationEntity.getLatitude(), locationEntity.getLongitude());
+            if (prevLatLng == null) {
+                prevLatLng = latLng;
+            } else {
+                startPoint.setLatitude(prevLatLng.latitude);
+                startPoint.setLongitude(prevLatLng.longitude);
+                endPoint.setLatitude(latLng.latitude);
+                endPoint.setLongitude(latLng.longitude);
+
+//                if (startPoint.distanceTo(endPoint) >= 20) {
+
+//testing
+                rectlineafterFilterOptions.startCap(new RoundCap())
+                        .endCap(new RoundCap())
+                        .jointType(JointType.ROUND)
+                        .add(prevLatLng)
+                        .add(latLng);
+//                }
+
+                prevLatLng = latLng;
+            }
+
+
+        }
+
+        rectlineafterFilter = mMap.addPolyline(rectlineafterFilterOptions);
 
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
