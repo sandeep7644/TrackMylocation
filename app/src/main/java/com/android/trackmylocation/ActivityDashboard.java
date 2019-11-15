@@ -28,6 +28,7 @@ import com.adam.gpsstatus.GpsStatusProxy;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.ActivityTransition;
+import com.google.android.gms.location.ActivityTransitionRequest;
 import com.google.android.gms.location.DetectedActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
@@ -329,7 +330,7 @@ public class ActivityDashboard extends AppCompatActivity implements Recyclerview
 
             case R.id.go_to_details:
                 Intent i = new Intent(ActivityDashboard.this, LocationDetailsActivity.class);
-                i.putExtra("detail_id", "14 November 2019%");
+                i.putExtra("detail_id", "15 November 2019%");
                 startActivity(i);
                 break;
             case R.id.exportdatabase:
@@ -526,57 +527,57 @@ public class ActivityDashboard extends AppCompatActivity implements Recyclerview
                         .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
                         .build());
 
-//        ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
-//        Task<Void> task = ActivityRecognition.getClient(getApplicationContext())
-//                .requestActivityTransitionUpdates(request, getTransitionPendingIntent());
-//
-//        task.addOnSuccessListener(
-//                new OnSuccessListener<Void>() {
-//                    @Override
-//                    public void onSuccess(Void result) {
-//                        sharedPreferences.edit().putBoolean("requestingActivityUpdates", true).commit();
-//                        // Handle success
-//                    }
-//                }
-//        );
-//
-//        task.addOnFailureListener(
-//                new OnFailureListener() {
-//                    @Override
-//                    public void onFailure(Exception e) {
-//                        // Handle error
-//                    }
-//                }
-//        );
-
         Intent intent = new Intent(this, ForegroundLocationUpdatesService.class);
         intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
         mPendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         mActivityRecognitionClient = ActivityRecognition.getClient(this);
 
+        ActivityTransitionRequest request = new ActivityTransitionRequest(transitions);
+        Task<Void> task = ActivityRecognition.getClient(getApplicationContext())
+                .requestActivityTransitionUpdates(request, mPendingIntent);
 
-        Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
-                10000,
-                mPendingIntent);
+        task.addOnSuccessListener(
+                new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        sharedPreferences.edit().putBoolean("requestingActivityUpdates", true).commit();
+                        // Handle success
+                    }
+                }
+        );
 
-        task.addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void result) {
-                Toast.makeText(mContext, "Successfully requested activity updates", Toast.LENGTH_SHORT).show();
-                Timber.i("Successfully requested activity updates");
+        task.addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(Exception e) {
+                        // Handle error
+                    }
+                }
+        );
 
 
-            }
-        });
-
-        task.addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(mContext, "failed requested activity updates", Toast.LENGTH_SHORT).show();
-                Timber.i("Successfully requested activity updates");
-
-            }
-        });
+//        Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
+//                10000,
+//                mPendingIntent);
+//
+//        task.addOnSuccessListener(new OnSuccessListener<Void>() {
+//            @Override
+//            public void onSuccess(Void result) {
+//                Toast.makeText(mContext, "Successfully requested activity updates", Toast.LENGTH_SHORT).show();
+//                Timber.i("Successfully requested activity updates");
+//
+//
+//            }
+//        });
+//
+//        task.addOnFailureListener(new OnFailureListener() {
+//            @Override
+//            public void onFailure(@NonNull Exception e) {
+//                Toast.makeText(mContext, "failed requested activity updates", Toast.LENGTH_SHORT).show();
+//                Timber.i("Successfully requested activity updates");
+//
+//            }
+//        });
 
     }
 
