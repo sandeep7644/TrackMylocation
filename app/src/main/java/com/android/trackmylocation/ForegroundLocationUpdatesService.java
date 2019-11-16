@@ -184,8 +184,8 @@ public class ForegroundLocationUpdatesService extends Service {
         }
     }
 
-    private void broadcastActivity(int activity_type) {
-        handleUserActivity(activity_type);
+    private void broadcastActivity(DetectedActivity activity_type) {
+        handleUserActivity(activity_type.getType());
 
     }
 
@@ -302,17 +302,23 @@ public class ForegroundLocationUpdatesService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
-            if (ActivityTransitionResult.hasResult(intent)) {
-                ActivityTransitionResult result = ActivityTransitionResult.extractResult(intent);
-                for (ActivityTransitionEvent event : result.getTransitionEvents()) {
-                    // chronological sequence of events....
-                    broadcastActivity(event.getActivityType());
+        ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 
-                }
+        // Get the list of the probable activities associated with the current state of the
+        // device. Each activity is associated with a confidence level, which is an int between
+        // 0 and 100.
+        if (result == null) {
+            return START_STICKY;
+        }
+        ArrayList<DetectedActivity> detectedActivities = (ArrayList) result.getProbableActivities();
+
+        for (DetectedActivity activity : detectedActivities) {
+            if (activity.getConfidence() > 75) {
+                broadcastActivity(activity);
+//                log.info("Detected activity: " + activity.getType() + ", " + activity.getConfidence());
+
             }
         }
-
         return START_STICKY;
     }
 
