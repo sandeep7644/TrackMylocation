@@ -14,7 +14,7 @@ public interface LocationDao {
     void insertDirectGrnOffline(LocationEntity locationEntity);
 
 
-    @Query("SELECT * FROM LocationEntity WHERE millisecondsatActivitychange  like  :id  AND address = :filter ORDER BY slNo DESC")
+    @Query("SELECT * FROM LocationEntity WHERE date_time  like  :id  AND address = :filter ORDER BY slNo DESC")
     List<LocationEntity> getLocationData(String id,String filter);
 
 

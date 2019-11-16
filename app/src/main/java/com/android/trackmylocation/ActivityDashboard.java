@@ -329,7 +329,7 @@ public class ActivityDashboard extends AppCompatActivity implements Recyclerview
 
             case R.id.go_to_details:
                 Intent i = new Intent(ActivityDashboard.this, LocationDetailsActivity.class);
-                i.putExtra("detail_id", "14 November 2019%");
+                i.putExtra("detail_id", "16 November 2019%");
                 startActivity(i);
                 break;
             case R.id.exportdatabase:

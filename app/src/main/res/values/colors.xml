@@ -27,4 +27,10 @@
     <color name="activity_main_label_kal">#F66F</color>
 
     <color name="activity_main_label_alt">#F888</color>
+
+    <color name="walking_polylinecolor">#FF0081</color>
+    <color name="vehicle_polylinecolor">#0066FF</color>
+
+
+
 </resources>

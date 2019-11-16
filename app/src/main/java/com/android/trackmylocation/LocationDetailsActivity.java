@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Build;
@@ -81,6 +82,7 @@ public class LocationDetailsActivity extends AppCompatActivity {
     Location startPoint = new Location("locationA");
     Location endPoint = new Location("locationB");
     CheckBox checknormal, checkfilter, checkpredicted;
+    final PolylineOptions[] polylineOptions = {new PolylineOptions()};
 
     //i pushed this file for testing
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -203,7 +205,11 @@ public class LocationDetailsActivity extends AppCompatActivity {
 
     private void drawPolyLinesPredicted() {
         List<LocationEntity> list = OfflineEntries.getAppDatabase(getApplicationContext()).locationDao().getLocationData(detail_id, "predicted_filter");
+        PolylineOptions polylineOptionsVehicle=new PolylineOptions()
+                .color(R.color.vehicle_polylinecolor) ;
 
+        PolylineOptions polylineOptionsWalking=new PolylineOptions()
+                .color(R.color.walking_polylinecolor) ;
         if (list == null)
             return;
 
@@ -241,13 +247,29 @@ public class LocationDetailsActivity extends AppCompatActivity {
                 endPoint.setLongitude(latLng.longitude);
 
 //                if (startPoint.distanceTo(endPoint) >= 20) {
+                if(locationEntity.getMillisecondsatActivitychange().toLowerCase().contains("vehicle")){
+                    mMap.addPolyline(new PolylineOptions()
+                            .add(prevLatLng, latLng)
+                            .width(5)
+                            .color(Color.RED));
 
+                }
+
+                else if(locationEntity.getMillisecondsatActivitychange().toLowerCase().contains("walking")){
+                    mMap.addPolyline(new PolylineOptions()
+                            .add(prevLatLng, latLng)
+                            .width(5)
+                            .color(Color.GREEN));
+                }
+
+                else if(locationEntity.getMillisecondsatActivitychange().toLowerCase().contains("still")){
+                    mMap.addPolyline(new PolylineOptions()
+                            .add(prevLatLng, latLng)
+                            .width(5)
+                            .color(Color.BLUE));
+                }
 //testing
-                rectlinePredictedOptions.startCap(new RoundCap())
-                        .endCap(new RoundCap())
-                        .jointType(JointType.ROUND)
-                        .add(prevLatLng)
-                        .add(latLng);
+
 //                }
 
                 prevLatLng = latLng;
@@ -256,7 +278,6 @@ public class LocationDetailsActivity extends AppCompatActivity {
 
         }
 
-        rectlinePredicted = mMap.addPolyline(rectlinePredictedOptions);
 
         mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
